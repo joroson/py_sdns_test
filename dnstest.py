@@ -1,11 +1,11 @@
 #!/usr/bin/python3
 
+import argparse
 from concurrent.futures import ThreadPoolExecutor
 import dns.resolver
 import time
 import socket
 import json
-
 
 def dns_query(resolver, fqdn, record_type='A', nameserver=None):
     if nameserver:
@@ -23,7 +23,6 @@ def dns_query(resolver, fqdn, record_type='A', nameserver=None):
         "epoch_timestamp_millis": epoch_timestamp_millis
     }
 
-
 def load_test(fqdn, record_type, num_requests, concurrency, nameserver=None):
     resolver = dns.resolver.Resolver()
     with ThreadPoolExecutor(max_workers=concurrency) as executor:
@@ -33,13 +32,20 @@ def load_test(fqdn, record_type, num_requests, concurrency, nameserver=None):
     avg_time = total_time / len(results)
     return avg_time, results
 
-
 if __name__ == "__main__":
-    dns_server = "172.16.1.254"
-    fqdn = "gslb.blinky.light"
-    record_type = 'A'
-    num_requests = 50000
-    concurrency = 50  # Increased to 50 for higher parallelism
+    parser = argparse.ArgumentParser(description="DNS Load Tester")
+    parser.add_argument("--dns_server", required=True, help="DNS server IP address")
+    parser.add_argument("--fqdn", required=True, help="Fully Qualified Domain Name")
+    parser.add_argument("--num_requests", required=True, type=int, help="Number of DNS requests to make")
+    parser.add_argument("--concurrency", required=True, type=int, help="Number of concurrent requests")
+
+    args = parser.parse_args()
+
+    dns_server = args.dns_server
+    fqdn = args.fqdn
+    num_requests = args.num_requests
+    concurrency = args.concurrency
+    record_type = 'A'  # Kept as a constant for this example
 
     start_time = time.time()
     avg_response_time, responses = load_test(fqdn, record_type, num_requests, concurrency, dns_server)
